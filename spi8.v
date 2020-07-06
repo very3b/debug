@@ -1,7 +1,7 @@
 /*
  * Minimum SPI support 8-bit read/write
  *
- * 
+ * 2 clock cycle wasted for ead 
  * 
  */
 
@@ -167,14 +167,14 @@ module spi8 (
       end
       else if (r_read) begin
               case (r_addr) //[6:0] r_addr
-	         ad_r_reg00     : r_sh_out <=  r_reg00 ;
-	         ad_r_reg01     : r_sh_out <=  r_reg01 ;
-	         ad_r_reg02     : r_sh_out <=  r_reg02 ;
-	         ad_r_reg03     : r_sh_out <=  r_reg03 ;
-	         ad_r_reg04     : r_sh_out <=  r_reg04 ;
-	         ad_r_reg05     : r_sh_out <=  r_reg05 ;
-	         ad_r_reg06     : r_sh_out <=  r_reg06 ;
-	         ad_r_reg07     : r_sh_out <=  r_reg07 ;
+	         ad_r_reg00     : {r_out, r_sh_out}  <=  {r_reg00, 1'b0} ;
+	         ad_r_reg01     : {r_out, r_sh_out}  <=  {r_reg01, 1'b0} ;
+	         ad_r_reg02     : {r_out, r_sh_out}  <=  {r_reg02, 1'b0} ;
+	         ad_r_reg03     : {r_out, r_sh_out}  <=  {r_reg03, 1'b0} ;
+	         ad_r_reg04     : {r_out, r_sh_out}  <=  {r_reg04, 1'b0} ;
+	         ad_r_reg05     : {r_out, r_sh_out}  <=  {r_reg05, 1'b0} ;
+	         ad_r_reg06     : {r_out, r_sh_out}  <=  {r_reg06, 1'b0} ;
+	         ad_r_reg07     : {r_out, r_sh_out}  <=  {r_reg07, 1'b0} ;
 	         default        : r_sh_out <= 0 ;
 	      endcase // case(r_addr)
 	   end // if (r_read ..
