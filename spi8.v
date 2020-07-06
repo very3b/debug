@@ -61,7 +61,7 @@ module spi8 (
    //shift register for a command frame read
    reg [7:0]    r_sh_out ;      // shift register for serial out
    reg           r_out ;         // output register for serial out
-   reg           r_read ;        // '1' = you can read now (from addressed reg)
+   wire           r_read ;        // '1' = you can read now (from addressed reg)
    reg           r_write ;       // '1' = you can write now (to addressed reg)
 
    // bit cnt  16-bit 4bits
@@ -82,22 +82,14 @@ module spi8 (
    always @(posedge SV_n or negedge rst_n) begin
       if (!rst_n) begin
          r_addr  <= 0 ;
-	 r_read  <= 0 ;
 	 r_write <= 0 ;
 	 bitcnt     <= 0 ;
      // add counter and tx_data for read
         
       end
       else if (SV_n) begin
-              if (bitcnt == 4'd8) begin
-               // read proces done  reset r/w status registers 
-		 r_read  <= 0 ;
-              end
-              else /*if (bitcnt == 4'd16)*/  begin //disable length check
                  r_addr  <= r_sh_in[14:8] ;
 		 r_write <= 1 ;
-		 r_read  <= 0 ;
-	      end
 	   end //SV_n 
    end // always @
 
@@ -138,35 +130,38 @@ module spi8 (
 	         default        : ;
 	      endcase // case(r_addr)
            end // if (r_write ..
-           else if (!SV_n & !r_read) //when not reading
+           else if (!SV_n ) //when not reading
                    r_sh_in <= { r_sh_in[14:0] , SI } ;
                    bitcnt  <= bitcnt +5'b0001;
     end // always @
   
 
 
-   // determin read process starts  half clock offset
-   always @(negedge SCLK  or negedge rst_n) begin
+  assign r_read=!SV_n && bitcnt == 4'd8 && r_sh_in[7]==1 ;
+
+
+  always @(negedge SCLK  or negedge rst_n) begin
       if( !rst_n) begin
         r_addr <=0;
-        r_read <=0;
-        r_write<=0;
         bitcnt<=0;
       end
-      else if (!SV_n && bitcnt == 4'd8 && r_sh_in[7]==1 ) begin
+      else if (r_read) begin
          r_addr  <= r_sh_in[6:0] ;  //read command 1AAA-AAAA-XXXX-XXXX
-	 r_read  <= 1 ;
          r_write <= 0 ;
       end 
    end
 
-   always @(posedge SCLK or negedge rst_n) begin
+
+
+
+   always @(negedge SCLK or negedge rst_n) begin
       if (!rst_n) begin
          r_sh_out <= 0 ;
         // r_out <= 0 ;
       end
       else if (r_read) begin
-              case (r_addr) //[6:0] r_addr
+              //case (r_addr) //[6:0] r_addr
+              case (r_sh_in[6:0]) //[6:0] r_addr
 	         ad_r_reg00     : {r_out, r_sh_out}  <=  {r_reg00, 1'b0} ;
 	         ad_r_reg01     : {r_out, r_sh_out}  <=  {r_reg01, 1'b0} ;
 	         ad_r_reg02     : {r_out, r_sh_out}  <=  {r_reg02, 1'b0} ;
@@ -185,7 +180,7 @@ module spi8 (
          r_sh_out <= 0 ;
          r_out <= 0 ;
       end
-     else  if (r_read ) begin
+     else  begin
          { r_out , r_sh_out } <= { r_sh_out[7:0] , 1'b0 } ;
      end
    end //always
